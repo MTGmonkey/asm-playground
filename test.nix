@@ -15,16 +15,16 @@ stdenv.mkDerivation {
   configurePhase = ''
   '';
   buildPhase = ''
-    nasm -f elf main_start.asm
-    ld -m elf_i386 main_start.o -o main
+    nasm -f elf test_start.asm
+    ld -m elf_i386 test_start.o -o test
   '';
   installPhase = ''
     mkdir -p $out/bin
-    cp main $out/bin/main
+    cp test $out/bin/test
   '';
 
   meta = {
     license = lib.licenses.wtfpl;
-    mainProgram = "main";
+    mainProgram = "test";
   };
 }

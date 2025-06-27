@@ -7,16 +7,16 @@ slen:
   push ebx
   mov ebx, eax
 
-slen_nextchar:
-  cmp byte [eax], 0
-  jz slen_finished
-  inc eax
-  jmp slen_nextchar
+  .loop:
+    cmp byte [eax], 0
+    jz .fin
+    inc eax
+    jmp .loop
 
-slen_finished:
-  sub eax, ebx
-  pop ebx
-  ret
+  .fin:
+    sub eax, ebx
+    pop ebx
+    ret
 
 ; *********************
 ; clear_bss : BSS -> IO
@@ -25,13 +25,13 @@ slen_finished:
 
 clear_bss:
   cmp byte [eax], 0
-  jz clear_bss_finished
+  jz .fin
   mov [eax], byte 0
   inc eax
   jmp clear_bss
 
-clear_bss_finished:
-  ret
+  .fin:
+    ret
 
 ; *******************************
 ; scmp : String -> String -> Bool
@@ -41,25 +41,50 @@ clear_bss_finished:
 scmp:
   push ecx
 
-scmp_nextchar:
-  mov cl, byte [ebx]
-  cmp byte [eax], cl
-  jnz scmp_bad
-  cmp byte [eax], 0
-  jz scmp_good
-  inc eax
-  inc ebx
-  jmp scmp_nextchar
+  .loop:
+    mov cl, byte [ebx]
+    cmp byte [eax], cl
+    jnz .bad
+    cmp byte [eax], 0
+    jz .good
+    inc eax
+    inc ebx
+    jmp .loop
 
-scmp_good:
-  mov eax, 0
-  jmp scmp_finished
+  .good:
+    mov eax, 0
+    jmp .fin
 
-scmp_bad:
-  mov eax, 1
+  .bad:
+    mov eax, 1
 
-scmp_finished:
+  .fin:
+    pop ecx
+    ret
+
+; ************************
+; sdecprint : String -> IO
+; prints string 1 shorter
+; ************************
+
+sdecprint:
+  push edx
+  push ecx
+  push ebx
+  push eax
+  call slen
+  dec eax
+
+  mov edx, eax
+  pop eax
+  mov ecx, eax
+  mov ebx, 1
+  mov eax, 4
+  int 80h
+
+  pop ebx
   pop ecx
+  pop edx
   ret
 
 ; *********************
@@ -102,6 +127,45 @@ sprintln:
 
   pop eax ; linefeed
   pop eax ; initial
+  ret
+
+; *******************
+; bprint : Byte -> IO
+; prints 1 byte
+; *******************
+
+bprint:
+  push edx
+  push ecx
+  push ebx
+  push eax
+
+  mov edx, 1
+  pop eax
+  mov ecx, eax
+  mov ebx, 1
+  mov eax, 4
+  int 80h
+
+  pop ebx
+  pop ecx
+  pop edx
+  ret
+
+; *********************
+; bprintln : Byte -> IO
+; prints 1 byte + 0Ah
+; *********************
+
+bprintln:
+  call bprint
+  push eax
+  mov eax, 0Ah
+  push eax
+  mov eax, esp
+  call bprint
+  pop eax
+  pop eax
   ret
 
 ; ************
